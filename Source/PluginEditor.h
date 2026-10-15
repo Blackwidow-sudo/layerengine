@@ -729,74 +729,111 @@ public:
                 dp.release);
 
     posSlider.onValueChange = [this] {
-      this->layer.getParams().position = (float)posSlider.getValue();
+      audioProcessor.setParameterValue("layer/" + juce::String(layerIndex) +
+                                           "/position",
+                                       (float)posSlider.getValue());
     };
     sizeSlider.onValueChange = [this] {
-      this->layer.getParams().size = (float)sizeSlider.getValue();
+      audioProcessor.setParameterValue("layer/" + juce::String(layerIndex) +
+                                           "/size",
+                                       (float)sizeSlider.getValue());
     };
     densSlider.onValueChange = [this] {
-      this->layer.getParams().density = (float)densSlider.getValue();
+      audioProcessor.setParameterValue("layer/" + juce::String(layerIndex) +
+                                           "/density",
+                                       (float)densSlider.getValue());
     };
     pitchSlider.onValueChange = [this] {
-      this->layer.getParams().pitch = (float)pitchSlider.getValue();
+      audioProcessor.setParameterValue("layer/" + juce::String(layerIndex) +
+                                           "/pitch",
+                                       (float)pitchSlider.getValue());
     };
 
     posRandSlider.onValueChange = [this] {
-      this->layer.getParams().posRandomness = (float)posRandSlider.getValue();
+      audioProcessor.setParameterValue("layer/" + juce::String(layerIndex) +
+                                           "/posRandomness",
+                                       (float)posRandSlider.getValue());
     };
     pitchRandSlider.onValueChange = [this] {
-      this->layer.getParams().pitchRandomness =
-          (float)pitchRandSlider.getValue();
+      audioProcessor.setParameterValue("layer/" + juce::String(layerIndex) +
+                                           "/pitchRandomness",
+                                       (float)pitchRandSlider.getValue());
     };
     sizeRandSlider.onValueChange = [this] {
-      this->layer.getParams().sizeRandomness = (float)sizeRandSlider.getValue();
+      audioProcessor.setParameterValue("layer/" + juce::String(layerIndex) +
+                                           "/sizeRandomness",
+                                       (float)sizeRandSlider.getValue());
     };
 
     panSlider.onValueChange = [this] {
-      this->layer.getParams().pan = (float)panSlider.getValue();
+      audioProcessor.setParameterValue("layer/" + juce::String(layerIndex) +
+                                           "/pan",
+                                       (float)panSlider.getValue());
     };
     spreadSlider.onValueChange = [this] {
-      this->layer.getParams().spread = (float)spreadSlider.getValue();
+      audioProcessor.setParameterValue("layer/" + juce::String(layerIndex) +
+                                           "/spread",
+                                       (float)spreadSlider.getValue());
     };
 
     scanSpeedSlider.onValueChange = [this] {
-      this->layer.getParams().scanSpeed = (float)scanSpeedSlider.getValue();
+      audioProcessor.setParameterValue("layer/" + juce::String(layerIndex) +
+                                           "/scanSpeed",
+                                       (float)scanSpeedSlider.getValue());
     };
     revProbSlider.onValueChange = [this] {
-      this->layer.getParams().reverseProbability =
-          (float)revProbSlider.getValue();
+      audioProcessor.setParameterValue("layer/" + juce::String(layerIndex) +
+                                           "/reverseProbability",
+                                       (float)revProbSlider.getValue());
     };
 
     windowShapeCombo.onChange = [this] {
-      this->layer.getParams().windowShape =
-          (WindowShape)(windowShapeCombo.getSelectedId() - 1);
+      audioProcessor.setParameterValue(
+          "layer/" + juce::String(layerIndex) + "/windowShape",
+          (float)(windowShapeCombo.getSelectedId() - 1));
     };
 
     cutoffSlider.onValueChange = [this] {
-      this->layer.getParams().filterCutoff = (float)cutoffSlider.getValue();
+      audioProcessor.setParameterValue("layer/" + juce::String(layerIndex) +
+                                           "/filterCutoff",
+                                       (float)cutoffSlider.getValue());
     };
     resSlider.onValueChange = [this] {
-      this->layer.getParams().filterResonance = (float)resSlider.getValue();
+      audioProcessor.setParameterValue("layer/" + juce::String(layerIndex) +
+                                           "/filterResonance",
+                                       (float)resSlider.getValue());
     };
 
     lowNoteSlider.onValueChange = [this] {
-      this->layer.getParams().lowNote = (int)lowNoteSlider.getValue();
+      audioProcessor.setParameterValue("layer/" + juce::String(layerIndex) +
+                                           "/lowNote",
+                                       (float)lowNoteSlider.getValue());
     };
     highNoteSlider.onValueChange = [this] {
-      this->layer.getParams().highNote = (int)highNoteSlider.getValue();
+      audioProcessor.setParameterValue("layer/" + juce::String(layerIndex) +
+                                           "/highNote",
+                                       (float)highNoteSlider.getValue());
     };
 
     atkSlider.onValueChange = [this] {
-      this->layer.getParams().attack = (float)atkSlider.getValue();
+      audioProcessor.setParameterValue("layer/" + juce::String(layerIndex) +
+                                           "/attack",
+                                       (float)atkSlider.getValue());
     };
     decSlider.onValueChange = [this] {
-      this->layer.getParams().decay = (float)decSlider.getValue();
+      audioProcessor.setParameterValue("layer/" + juce::String(layerIndex) +
+                                           "/decay",
+                                       (float)decSlider.getValue());
     };
     susSlider.onValueChange = [this] {
-      this->layer.getParams().sustain = (float)susSlider.getValue();
+      audioProcessor.setParameterValue("layer/" + juce::String(layerIndex) +
+                                           "/sustain",
+                                       (float)susSlider.getValue());
     };
     relSlider.onValueChange = [this] {
-      this->layer.getParams().release = (float)relSlider.getValue();
+      audioProcessor.setParameterValue("layer/" + juce::String(layerIndex) +
+                                           "/release",
+                                       (float)relSlider.getValue());
     };
 
     startTimerHz(30);
@@ -1087,22 +1124,23 @@ public:
     reverbBypassBtn.setColour(juce::TextButton::textColourOnId,
                               juce::Colours::white);
     reverbBypassBtn.onClick = [this] {
-      audioProcessor.getFXParams().reverbBypass =
-          !reverbBypassBtn.getToggleState();
+      audioProcessor.setParameterValue("global/reverbBypass",
+                                       reverbBypassBtn.getToggleState() ? 0.0f
+                                                                        : 1.0f);
     };
 
     setupSlider(reverbSizeSlider, "REV SIZE",
                 audioProcessor.getReverbParams().roomSize, 0.5f);
     reverbSizeSlider.onValueChange = [this] {
-      audioProcessor.getReverbParams().roomSize =
-          (float)reverbSizeSlider.getValue();
+      audioProcessor.setParameterValue("global/reverbSize",
+                                       (float)reverbSizeSlider.getValue());
     };
 
     setupSlider(reverbWetSlider, "REV WET",
                 audioProcessor.getReverbParams().wetLevel, 0.33f);
     reverbWetSlider.onValueChange = [this] {
-      audioProcessor.getReverbParams().wetLevel =
-          (float)reverbWetSlider.getValue();
+      audioProcessor.setParameterValue("global/reverbWet",
+                                       (float)reverbWetSlider.getValue());
     };
 
     // 2. Chorus Bypass & Sliders
@@ -1119,29 +1157,30 @@ public:
     chorusBypassBtn.setColour(juce::TextButton::textColourOnId,
                               juce::Colours::white);
     chorusBypassBtn.onClick = [this] {
-      audioProcessor.getFXParams().chorusBypass =
-          !chorusBypassBtn.getToggleState();
+      audioProcessor.setParameterValue("global/chorusBypass",
+                                       chorusBypassBtn.getToggleState() ? 0.0f
+                                                                        : 1.0f);
     };
 
     setupSlider(chorusRateSlider, "CHO RATE",
                 audioProcessor.getFXParams().chorusRate, 1.0f, 0.1f, 10.0f);
     chorusRateSlider.onValueChange = [this] {
-      audioProcessor.getFXParams().chorusRate =
-          (float)chorusRateSlider.getValue();
+      audioProcessor.setParameterValue("global/chorusRate",
+                                       (float)chorusRateSlider.getValue());
     };
 
     setupSlider(chorusDepthSlider, "CHO DEPTH",
                 audioProcessor.getFXParams().chorusDepth, 0.2f, 0.0f, 1.0f);
     chorusDepthSlider.onValueChange = [this] {
-      audioProcessor.getFXParams().chorusDepth =
-          (float)chorusDepthSlider.getValue();
+      audioProcessor.setParameterValue("global/chorusDepth",
+                                       (float)chorusDepthSlider.getValue());
     };
 
     setupSlider(chorusMixSlider, "CHO MIX",
                 audioProcessor.getFXParams().chorusMix, 0.0f, 0.0f, 1.0f);
     chorusMixSlider.onValueChange = [this] {
-      audioProcessor.getFXParams().chorusMix =
-          (float)chorusMixSlider.getValue();
+      audioProcessor.setParameterValue("global/chorusMix",
+                                       (float)chorusMixSlider.getValue());
     };
 
     // 2.5 Delay Bypass & Sliders
@@ -1158,28 +1197,30 @@ public:
     delayBypassBtn.setColour(juce::TextButton::textColourOnId,
                              juce::Colours::white);
     delayBypassBtn.onClick = [this] {
-      audioProcessor.getFXParams().delayBypass =
-          !delayBypassBtn.getToggleState();
+      audioProcessor.setParameterValue("global/delayBypass",
+                                       delayBypassBtn.getToggleState() ? 0.0f
+                                                                       : 1.0f);
     };
 
     setupSlider(delayTimeSlider, "DLY TIME",
                 audioProcessor.getFXParams().delayTime, 250.0f, 10.0f, 2000.0f);
     delayTimeSlider.onValueChange = [this] {
-      audioProcessor.getFXParams().delayTime =
-          (float)delayTimeSlider.getValue();
+      audioProcessor.setParameterValue("global/delayTime",
+                                       (float)delayTimeSlider.getValue());
     };
 
     setupSlider(delayFeedbackSlider, "DLY FDBK",
                 audioProcessor.getFXParams().delayFeedback, 0.3f, 0.0f, 0.95f);
     delayFeedbackSlider.onValueChange = [this] {
-      audioProcessor.getFXParams().delayFeedback =
-          (float)delayFeedbackSlider.getValue();
+      audioProcessor.setParameterValue("global/delayFeedback",
+                                       (float)delayFeedbackSlider.getValue());
     };
 
     setupSlider(delayMixSlider, "DLY MIX",
                 audioProcessor.getFXParams().delayMix, 0.0f, 0.0f, 1.0f);
     delayMixSlider.onValueChange = [this] {
-      audioProcessor.getFXParams().delayMix = (float)delayMixSlider.getValue();
+      audioProcessor.setParameterValue("global/delayMix",
+                                       (float)delayMixSlider.getValue());
     };
 
     // 2.6 Phaser Bypass & Sliders
@@ -1196,37 +1237,38 @@ public:
     phaserBypassBtn.setColour(juce::TextButton::textColourOnId,
                               juce::Colours::white);
     phaserBypassBtn.onClick = [this] {
-      audioProcessor.getFXParams().phaserBypass =
-          !phaserBypassBtn.getToggleState();
+      audioProcessor.setParameterValue("global/phaserBypass",
+                                       phaserBypassBtn.getToggleState() ? 0.0f
+                                                                        : 1.0f);
     };
 
     setupSlider(phaserRateSlider, "PHS RATE",
                 audioProcessor.getFXParams().phaserRate, 0.5f, 0.01f, 10.0f);
     phaserRateSlider.onValueChange = [this] {
-      audioProcessor.getFXParams().phaserRate =
-          (float)phaserRateSlider.getValue();
+      audioProcessor.setParameterValue("global/phaserRate",
+                                       (float)phaserRateSlider.getValue());
     };
 
     setupSlider(phaserDepthSlider, "PHS DPTH",
                 audioProcessor.getFXParams().phaserDepth, 0.5f, 0.0f, 1.0f);
     phaserDepthSlider.onValueChange = [this] {
-      audioProcessor.getFXParams().phaserDepth =
-          (float)phaserDepthSlider.getValue();
+      audioProcessor.setParameterValue("global/phaserDepth",
+                                       (float)phaserDepthSlider.getValue());
     };
 
     setupSlider(phaserCenterFreqSlider, "PHS FREQ",
                 audioProcessor.getFXParams().phaserCenterFreq, 1000.0f, 50.0f,
                 5000.0f);
     phaserCenterFreqSlider.onValueChange = [this] {
-      audioProcessor.getFXParams().phaserCenterFreq =
-          (float)phaserCenterFreqSlider.getValue();
+      audioProcessor.setParameterValue("global/phaserCenterFreq",
+                                       (float)phaserCenterFreqSlider.getValue());
     };
 
     setupSlider(phaserMixSlider, "PHS MIX",
                 audioProcessor.getFXParams().phaserMix, 0.0f, 0.0f, 1.0f);
     phaserMixSlider.onValueChange = [this] {
-      audioProcessor.getFXParams().phaserMix =
-          (float)phaserMixSlider.getValue();
+      audioProcessor.setParameterValue("global/phaserMix",
+                                       (float)phaserMixSlider.getValue());
     };
 
     // 3. Filter Bypass & Sliders
@@ -1243,8 +1285,9 @@ public:
     filterBypassBtn.setColour(juce::TextButton::textColourOnId,
                               juce::Colours::white);
     filterBypassBtn.onClick = [this] {
-      audioProcessor.getFXParams().filterBypass =
-          !filterBypassBtn.getToggleState();
+      audioProcessor.setParameterValue("global/filterBypass",
+                                       filterBypassBtn.getToggleState() ? 0.0f
+                                                                         : 1.0f);
     };
 
     setupSlider(filterCutoffSlider, "MASTER HP/LP",
@@ -1252,15 +1295,15 @@ public:
                 20000.0f);
     filterCutoffSlider.setSkewFactorFromMidPoint(1000.0f);
     filterCutoffSlider.onValueChange = [this] {
-      audioProcessor.getFXParams().filterCutoff =
-          (float)filterCutoffSlider.getValue();
+      audioProcessor.setParameterValue("global/filterCutoff",
+                                       (float)filterCutoffSlider.getValue());
     };
 
     setupSlider(filterResSlider, "MST RES",
                 audioProcessor.getFXParams().filterResonance, 0.1f, 0.1f, 2.0f);
     filterResSlider.onValueChange = [this] {
-      audioProcessor.getFXParams().filterResonance =
-          (float)filterResSlider.getValue();
+      audioProcessor.setParameterValue("global/filterResonance",
+                                       (float)filterResSlider.getValue());
     };
 
     // 4. Limiter Bypass & Sliders
@@ -1277,24 +1320,25 @@ public:
     limiterBypassBtn.setColour(juce::TextButton::textColourOnId,
                                juce::Colours::white);
     limiterBypassBtn.onClick = [this] {
-      audioProcessor.getFXParams().limiterBypass =
-          !limiterBypassBtn.getToggleState();
+      audioProcessor.setParameterValue("global/limiterBypass",
+                                       limiterBypassBtn.getToggleState() ? 0.0f
+                                                                          : 1.0f);
     };
 
     setupSlider(limiterThresholdSlider, "LMT THRESH",
                 audioProcessor.getFXParams().limiterThreshold, 0.0f, -40.0f,
                 0.0f);
     limiterThresholdSlider.onValueChange = [this] {
-      audioProcessor.getFXParams().limiterThreshold =
-          (float)limiterThresholdSlider.getValue();
+      audioProcessor.setParameterValue("global/limiterThreshold",
+                                       (float)limiterThresholdSlider.getValue());
     };
 
     setupSlider(limiterReleaseSlider, "LMT REL",
                 audioProcessor.getFXParams().limiterRelease, 100.0f, 1.0f,
                 500.0f);
     limiterReleaseSlider.onValueChange = [this] {
-      audioProcessor.getFXParams().limiterRelease =
-          (float)limiterReleaseSlider.getValue();
+      audioProcessor.setParameterValue("global/limiterRelease",
+                                       (float)limiterReleaseSlider.getValue());
     };
 
     startTimerHz(30);
@@ -1530,7 +1574,9 @@ public:
       s->setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
       s->setDoubleClickReturnValue(true, 0.8f);
       s->onValueChange = [this, i, s] {
-        audioProcessor.getLayer(i).getParams().volume = (float)s->getValue();
+        audioProcessor.setParameterValue("layer/" + juce::String(i) +
+                                             "/volume",
+                                         (float)s->getValue());
       };
 
       // 2. Pan Sliders
@@ -1543,7 +1589,8 @@ public:
       ps->setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
       ps->setDoubleClickReturnValue(true, 0.0f);
       ps->onValueChange = [this, i, ps] {
-        audioProcessor.getLayer(i).getParams().pan = (float)ps->getValue();
+        audioProcessor.setParameterValue("layer/" + juce::String(i) + "/pan",
+                                         (float)ps->getValue());
       };
 
       // 3. Layer Name Labels
@@ -1575,7 +1622,9 @@ public:
       m->setColour(juce::TextButton::textColourOffId, juce::Colour(0xff2d3436));
       m->setColour(juce::TextButton::textColourOnId, juce::Colours::white);
       m->onClick = [this, i, m] {
-        audioProcessor.getLayer(i).getParams().isMuted = m->getToggleState();
+        audioProcessor.setParameterValue("layer/" + juce::String(i) +
+                                             "/isMuted",
+                                         m->getToggleState() ? 1.0f : 0.0f);
       };
 
       // 6. Solo Buttons
@@ -1593,7 +1642,9 @@ public:
                      juce::Colour(0xff2d3436));
       sol->setColour(juce::TextButton::textColourOnId, juce::Colours::white);
       sol->onClick = [this, i, sol] {
-        audioProcessor.getLayer(i).getParams().isSoloed = sol->getToggleState();
+        audioProcessor.setParameterValue("layer/" + juce::String(i) +
+                                             "/isSoloed",
+                                         sol->getToggleState() ? 1.0f : 0.0f);
       };
     }
 
@@ -1830,10 +1881,10 @@ private:
     float v3 = (1.0f - x) * y;
     float v4 = x * y;
     
-    audioProcessor.getLayer(0).getParams().volume = v1;
-    audioProcessor.getLayer(1).getParams().volume = v2;
-    audioProcessor.getLayer(2).getParams().volume = v3;
-    audioProcessor.getLayer(3).getParams().volume = v4;
+    audioProcessor.setParameterValue("layer/0/volume", v1);
+    audioProcessor.setParameterValue("layer/1/volume", v2);
+    audioProcessor.setParameterValue("layer/2/volume", v3);
+    audioProcessor.setParameterValue("layer/3/volume", v4);
     
     repaint();
   }

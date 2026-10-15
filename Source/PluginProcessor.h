@@ -29,6 +29,8 @@ public:
   void getStateInformation(juce::MemoryBlock &destData) override;
   void setStateInformation(const void *data, int sizeInBytes) override;
 
+  juce::AudioProcessorValueTreeState parameters;
+
   GranularLayer &getLayer(int index) { return layers[index]; }
   juce::MidiKeyboardState &getKeyboardState() { return keyboardState; }
 
@@ -100,6 +102,11 @@ public:
   float mapCCValueToParam(const juce::String &paramId, float ccNormalized);
 
 private:
+  static juce::AudioProcessorValueTreeState::ParameterLayout
+  createParameterLayout();
+  void syncParametersFromHost();
+  void syncModelToParameters();
+
   std::array<GranularLayer, 4> layers;
   juce::MidiKeyboardState keyboardState;
 

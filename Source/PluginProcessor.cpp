@@ -1,9 +1,94 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+juce::AudioProcessorValueTreeState::ParameterLayout
+GranularSynthAudioProcessor::createParameterLayout() {
+  juce::AudioProcessorValueTreeState::ParameterLayout layout;
+
+  auto addFloat = [&layout](const juce::String &id, const juce::String &name,
+                            float min, float max, float defaultValue) {
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
+        id, name, juce::NormalisableRange<float>(min, max), defaultValue));
+  };
+
+  auto addBool = [&layout](const juce::String &id, const juce::String &name,
+                           bool defaultValue) {
+    layout.add(std::make_unique<juce::AudioParameterBool>(id, name,
+                                                          defaultValue));
+  };
+
+  for (int layerIndex = 0; layerIndex < 4; ++layerIndex) {
+    auto id = [layerIndex](const juce::String &name) {
+      return "layer/" + juce::String(layerIndex) + "/" + name;
+    };
+    auto prefix = "Layer " + juce::String(layerIndex + 1) + " ";
+
+    addFloat(id("position"), prefix + "Position", 0.0f, 1.0f, 0.0f);
+    addFloat(id("size"), prefix + "Size", 0.01f, 1.0f, 0.1f);
+    addFloat(id("density"), prefix + "Density", 1.0f, 100.0f, 10.0f);
+    addFloat(id("pitch"), prefix + "Pitch", 0.1f, 4.0f, 1.0f);
+    addFloat(id("volume"), prefix + "Volume", 0.0f, 1.0f, 0.8f);
+    addFloat(id("posRandomness"), prefix + "Position Randomness", 0.0f, 1.0f,
+             0.1f);
+    addFloat(id("pitchRandomness"), prefix + "Pitch Randomness", 0.0f, 1.0f,
+             0.0f);
+    addFloat(id("sizeRandomness"), prefix + "Size Randomness", 0.0f, 1.0f,
+             0.0f);
+    addFloat(id("pan"), prefix + "Pan", -1.0f, 1.0f, 0.0f);
+    addFloat(id("spread"), prefix + "Spread", 0.0f, 1.0f, 0.5f);
+    addFloat(id("scanSpeed"), prefix + "Scan Speed", -2.0f, 2.0f, 0.0f);
+    addFloat(id("reverseProbability"), prefix + "Reverse Probability", 0.0f,
+             1.0f, 0.0f);
+    layout.add(std::make_unique<juce::AudioParameterChoice>(
+        id("windowShape"), prefix + "Window Shape",
+        juce::StringArray{"Sine", "Gaussian", "Hann", "Triangular"}, 0));
+    addFloat(id("attack"), prefix + "Attack", 0.01f, 2.0f, 0.1f);
+    addFloat(id("decay"), prefix + "Decay", 0.01f, 2.0f, 0.1f);
+    addFloat(id("sustain"), prefix + "Sustain", 0.0f, 1.0f, 1.0f);
+    addFloat(id("release"), prefix + "Release", 0.01f, 5.0f, 0.5f);
+    addFloat(id("filterCutoff"), prefix + "Filter Cutoff", 20.0f, 20000.0f,
+             20000.0f);
+    addFloat(id("filterResonance"), prefix + "Filter Resonance", 0.1f, 2.0f,
+             0.7f);
+    addFloat(id("lowNote"), prefix + "Lowest Note", 0.0f, 127.0f, 0.0f);
+    addFloat(id("highNote"), prefix + "Highest Note", 0.0f, 127.0f, 127.0f);
+    addBool(id("isMuted"), prefix + "Mute", false);
+    addBool(id("isSoloed"), prefix + "Solo", false);
+  }
+
+  addFloat("global/reverbSize", "Reverb Size", 0.0f, 1.0f, 0.5f);
+  addFloat("global/reverbWet", "Reverb Wet", 0.0f, 1.0f, 0.33f);
+  addBool("global/reverbBypass", "Reverb Bypass", false);
+  addFloat("global/chorusRate", "Chorus Rate", 0.1f, 10.0f, 1.0f);
+  addFloat("global/chorusDepth", "Chorus Depth", 0.0f, 1.0f, 0.2f);
+  addFloat("global/chorusMix", "Chorus Mix", 0.0f, 1.0f, 0.0f);
+  addBool("global/chorusBypass", "Chorus Bypass", false);
+  addFloat("global/delayTime", "Delay Time", 10.0f, 2000.0f, 250.0f);
+  addFloat("global/delayFeedback", "Delay Feedback", 0.0f, 0.95f, 0.3f);
+  addFloat("global/delayMix", "Delay Mix", 0.0f, 1.0f, 0.0f);
+  addBool("global/delayBypass", "Delay Bypass", false);
+  addFloat("global/phaserRate", "Phaser Rate", 0.01f, 10.0f, 0.5f);
+  addFloat("global/phaserDepth", "Phaser Depth", 0.0f, 1.0f, 0.5f);
+  addFloat("global/phaserCenterFreq", "Phaser Frequency", 50.0f, 5000.0f,
+           1000.0f);
+  addFloat("global/phaserMix", "Phaser Mix", 0.0f, 1.0f, 0.0f);
+  addBool("global/phaserBypass", "Phaser Bypass", false);
+  addFloat("global/filterCutoff", "Master Filter Cutoff", 20.0f, 20000.0f,
+           20000.0f);
+  addFloat("global/filterResonance", "Master Filter Resonance", 0.1f, 2.0f,
+           0.1f);
+  addBool("global/filterBypass", "Master Filter Bypass", false);
+  addFloat("global/limiterThreshold", "Limiter Threshold", -40.0f, 0.0f, 0.0f);
+  addFloat("global/limiterRelease", "Limiter Release", 1.0f, 500.0f, 100.0f);
+  addBool("global/limiterBypass", "Limiter Bypass", false);
+
+  return layout;
+}
+
 GranularSynthAudioProcessor::GranularSynthAudioProcessor()
     : AudioProcessor(BusesProperties().withOutput(
-          "Output", juce::AudioChannelSet::stereo(), true)) {
+          "Output", juce::AudioChannelSet::stereo(), true)),
+      parameters(*this, nullptr, "PARAMETERS", createParameterLayout()) {
   reverbParams.roomSize = 0.5f;
   reverbParams.damping = 0.5f;
   reverbParams.wetLevel = 0.33f;
@@ -13,6 +98,146 @@ GranularSynthAudioProcessor::GranularSynthAudioProcessor()
 }
 
 GranularSynthAudioProcessor::~GranularSynthAudioProcessor() {}
+
+void GranularSynthAudioProcessor::syncParametersFromHost() {
+  auto getFloat = [this](const juce::String &id) {
+    if (auto *parameter = parameters.getParameter(id))
+      return parameter->convertFrom0to1(parameter->getValue());
+    return 0.0f;
+  };
+  auto getBool = [this](const juce::String &id) {
+    if (auto *parameter = parameters.getParameter(id))
+      return parameter->getValue() >= 0.5f;
+    return false;
+  };
+  auto getChoice = [this](const juce::String &id) {
+    if (auto *parameter = parameters.getParameter(id))
+      return (WindowShape)juce::jlimit(0, 3,
+                                       juce::roundToInt(parameter->getValue() * 3.0f));
+    return WindowShape::Sine;
+  };
+
+  for (int layerIndex = 0; layerIndex < 4; ++layerIndex) {
+    auto &p = layers[layerIndex].getParams();
+    auto id = [layerIndex](const juce::String &name) {
+      return "layer/" + juce::String(layerIndex) + "/" + name;
+    };
+    p.position = getFloat(id("position"));
+    p.size = getFloat(id("size"));
+    p.density = getFloat(id("density"));
+    p.pitch = getFloat(id("pitch"));
+    p.volume = getFloat(id("volume"));
+    p.posRandomness = getFloat(id("posRandomness"));
+    p.pitchRandomness = getFloat(id("pitchRandomness"));
+    p.sizeRandomness = getFloat(id("sizeRandomness"));
+    p.pan = getFloat(id("pan"));
+    p.spread = getFloat(id("spread"));
+    p.scanSpeed = getFloat(id("scanSpeed"));
+    p.reverseProbability = getFloat(id("reverseProbability"));
+    p.windowShape = getChoice(id("windowShape"));
+    p.attack = getFloat(id("attack"));
+    p.decay = getFloat(id("decay"));
+    p.sustain = getFloat(id("sustain"));
+    p.release = getFloat(id("release"));
+    p.filterCutoff = getFloat(id("filterCutoff"));
+    p.filterResonance = getFloat(id("filterResonance"));
+    p.lowNote = juce::roundToInt(getFloat(id("lowNote")));
+    p.highNote = juce::roundToInt(getFloat(id("highNote")));
+    p.isMuted = getBool(id("isMuted"));
+    p.isSoloed = getBool(id("isSoloed"));
+  }
+
+  reverbParams.roomSize = getFloat("global/reverbSize");
+  reverbParams.wetLevel = getFloat("global/reverbWet");
+  fxParams.reverbBypass = getBool("global/reverbBypass");
+  fxParams.chorusRate = getFloat("global/chorusRate");
+  fxParams.chorusDepth = getFloat("global/chorusDepth");
+  fxParams.chorusMix = getFloat("global/chorusMix");
+  fxParams.chorusBypass = getBool("global/chorusBypass");
+  fxParams.delayTime = getFloat("global/delayTime");
+  fxParams.delayFeedback = getFloat("global/delayFeedback");
+  fxParams.delayMix = getFloat("global/delayMix");
+  fxParams.delayBypass = getBool("global/delayBypass");
+  fxParams.phaserRate = getFloat("global/phaserRate");
+  fxParams.phaserDepth = getFloat("global/phaserDepth");
+  fxParams.phaserCenterFreq = getFloat("global/phaserCenterFreq");
+  fxParams.phaserMix = getFloat("global/phaserMix");
+  fxParams.phaserBypass = getBool("global/phaserBypass");
+  fxParams.filterCutoff = getFloat("global/filterCutoff");
+  fxParams.filterResonance = getFloat("global/filterResonance");
+  fxParams.filterBypass = getBool("global/filterBypass");
+  fxParams.limiterThreshold = getFloat("global/limiterThreshold");
+  fxParams.limiterRelease = getFloat("global/limiterRelease");
+  fxParams.limiterBypass = getBool("global/limiterBypass");
+}
+
+void GranularSynthAudioProcessor::syncModelToParameters() {
+  auto setFloat = [this](const juce::String &id, float value) {
+    if (auto *parameter = parameters.getParameter(id))
+      parameter->setValueNotifyingHost(parameter->convertTo0to1(value));
+  };
+  auto setBool = [this](const juce::String &id, bool value) {
+    if (auto *parameter = parameters.getParameter(id))
+      parameter->setValueNotifyingHost(value ? 1.0f : 0.0f);
+  };
+  auto setChoice = [this](const juce::String &id, int value) {
+    if (auto *parameter = parameters.getParameter(id))
+      parameter->setValueNotifyingHost(parameter->convertTo0to1((float)value));
+  };
+
+  for (int layerIndex = 0; layerIndex < 4; ++layerIndex) {
+    auto &p = layers[layerIndex].getParams();
+    auto id = [layerIndex](const juce::String &name) {
+      return "layer/" + juce::String(layerIndex) + "/" + name;
+    };
+    setFloat(id("position"), p.position);
+    setFloat(id("size"), p.size);
+    setFloat(id("density"), p.density);
+    setFloat(id("pitch"), p.pitch);
+    setFloat(id("volume"), p.volume);
+    setFloat(id("posRandomness"), p.posRandomness);
+    setFloat(id("pitchRandomness"), p.pitchRandomness);
+    setFloat(id("sizeRandomness"), p.sizeRandomness);
+    setFloat(id("pan"), p.pan);
+    setFloat(id("spread"), p.spread);
+    setFloat(id("scanSpeed"), p.scanSpeed);
+    setFloat(id("reverseProbability"), p.reverseProbability);
+    setChoice(id("windowShape"), (int)p.windowShape);
+    setFloat(id("attack"), p.attack);
+    setFloat(id("decay"), p.decay);
+    setFloat(id("sustain"), p.sustain);
+    setFloat(id("release"), p.release);
+    setFloat(id("filterCutoff"), p.filterCutoff);
+    setFloat(id("filterResonance"), p.filterResonance);
+    setFloat(id("lowNote"), (float)p.lowNote);
+    setFloat(id("highNote"), (float)p.highNote);
+    setBool(id("isMuted"), p.isMuted);
+    setBool(id("isSoloed"), p.isSoloed);
+  }
+
+  setFloat("global/reverbSize", reverbParams.roomSize);
+  setFloat("global/reverbWet", reverbParams.wetLevel);
+  setBool("global/reverbBypass", fxParams.reverbBypass);
+  setFloat("global/chorusRate", fxParams.chorusRate);
+  setFloat("global/chorusDepth", fxParams.chorusDepth);
+  setFloat("global/chorusMix", fxParams.chorusMix);
+  setBool("global/chorusBypass", fxParams.chorusBypass);
+  setFloat("global/delayTime", fxParams.delayTime);
+  setFloat("global/delayFeedback", fxParams.delayFeedback);
+  setFloat("global/delayMix", fxParams.delayMix);
+  setBool("global/delayBypass", fxParams.delayBypass);
+  setFloat("global/phaserRate", fxParams.phaserRate);
+  setFloat("global/phaserDepth", fxParams.phaserDepth);
+  setFloat("global/phaserCenterFreq", fxParams.phaserCenterFreq);
+  setFloat("global/phaserMix", fxParams.phaserMix);
+  setBool("global/phaserBypass", fxParams.phaserBypass);
+  setFloat("global/filterCutoff", fxParams.filterCutoff);
+  setFloat("global/filterResonance", fxParams.filterResonance);
+  setBool("global/filterBypass", fxParams.filterBypass);
+  setFloat("global/limiterThreshold", fxParams.limiterThreshold);
+  setFloat("global/limiterRelease", fxParams.limiterRelease);
+  setBool("global/limiterBypass", fxParams.limiterBypass);
+}
 
 void GranularSynthAudioProcessor::prepareToPlay(double sampleRate,
                                                 int samplesPerBlock) {
@@ -40,6 +265,7 @@ void GranularSynthAudioProcessor::releaseResources() {}
 void GranularSynthAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
                                                juce::MidiBuffer &midiMessages) {
   juce::ScopedNoDenormals noDenormals;
+  syncParametersFromHost();
   auto totalNumInputChannels = getTotalNumInputChannels();
   auto totalNumOutputChannels = getTotalNumOutputChannels();
 
@@ -246,6 +472,9 @@ void GranularSynthAudioProcessor::getStateInformation(
     xmlMap->setAttribute("ccNumber", ccNumber);
   }
 
+  if (auto parameterXml = parameters.copyState().createXml())
+    xmlState.addChildElement(parameterXml.release());
+
   // Save to memory
   copyXmlToBinary(xmlState, destData);
 }
@@ -256,6 +485,11 @@ void GranularSynthAudioProcessor::setStateInformation(const void *data,
       getXmlFromBinary(data, sizeInBytes));
 
   if (xmlState != nullptr && xmlState->hasTagName("LayerEngineState")) {
+    if (auto *parameterXml = xmlState->getChildByName("PARAMETERS"))
+      parameters.replaceState(juce::ValueTree::fromXml(*parameterXml));
+
+    syncParametersFromHost();
+
     // 1. Restore Global FX
     if (auto *xmlGlobal = xmlState->getChildByName("GlobalFX")) {
       reverbParams.roomSize = (float)xmlGlobal->getDoubleAttribute(
@@ -386,6 +620,8 @@ void GranularSynthAudioProcessor::setStateInformation(const void *data,
         }
       }
     }
+
+    syncModelToParameters();
   }
 }
 
@@ -513,6 +749,9 @@ float GranularSynthAudioProcessor::getParameterValue(
 
 void GranularSynthAudioProcessor::setParameterValue(const juce::String &paramId,
                                                     float val) {
+  if (auto *parameter = parameters.getParameter(paramId))
+    parameter->setValueNotifyingHost(parameter->convertTo0to1(val));
+
   if (paramId.startsWith("layer/")) {
     auto tokens = juce::StringArray::fromTokens(paramId, "/", "");
     if (tokens.size() == 3) {
@@ -544,6 +783,8 @@ void GranularSynthAudioProcessor::setParameterValue(const juce::String &paramId,
           p.scanSpeed = val;
         else if (name == "reverseProbability")
           p.reverseProbability = val;
+        else if (name == "windowShape")
+          p.windowShape = (WindowShape)juce::jlimit(0, 3, (int)val);
         else if (name == "filterCutoff")
           p.filterCutoff = val;
         else if (name == "filterResonance")
@@ -560,6 +801,10 @@ void GranularSynthAudioProcessor::setParameterValue(const juce::String &paramId,
           p.lowNote = (int)val;
         else if (name == "highNote")
           p.highNote = (int)val;
+        else if (name == "isMuted")
+          p.isMuted = val >= 0.5f;
+        else if (name == "isSoloed")
+          p.isSoloed = val >= 0.5f;
       }
     }
   } else if (paramId.startsWith("global/")) {
@@ -568,18 +813,24 @@ void GranularSynthAudioProcessor::setParameterValue(const juce::String &paramId,
       reverbParams.roomSize = val;
     else if (name == "reverbWet")
       reverbParams.wetLevel = val;
+    else if (name == "reverbBypass")
+      fxParams.reverbBypass = val >= 0.5f;
     else if (name == "chorusRate")
       fxParams.chorusRate = val;
     else if (name == "chorusDepth")
       fxParams.chorusDepth = val;
     else if (name == "chorusMix")
       fxParams.chorusMix = val;
+    else if (name == "chorusBypass")
+      fxParams.chorusBypass = val >= 0.5f;
     else if (name == "delayTime")
       fxParams.delayTime = val;
     else if (name == "delayFeedback")
       fxParams.delayFeedback = val;
     else if (name == "delayMix")
       fxParams.delayMix = val;
+    else if (name == "delayBypass")
+      fxParams.delayBypass = val >= 0.5f;
     else if (name == "phaserRate")
       fxParams.phaserRate = val;
     else if (name == "phaserDepth")
@@ -588,14 +839,20 @@ void GranularSynthAudioProcessor::setParameterValue(const juce::String &paramId,
       fxParams.phaserCenterFreq = val;
     else if (name == "phaserMix")
       fxParams.phaserMix = val;
+    else if (name == "phaserBypass")
+      fxParams.phaserBypass = val >= 0.5f;
     else if (name == "filterCutoff")
       fxParams.filterCutoff = val;
     else if (name == "filterResonance")
       fxParams.filterResonance = val;
+    else if (name == "filterBypass")
+      fxParams.filterBypass = val >= 0.5f;
     else if (name == "limiterThreshold")
       fxParams.limiterThreshold = val;
     else if (name == "limiterRelease")
       fxParams.limiterRelease = val;
+    else if (name == "limiterBypass")
+      fxParams.limiterBypass = val >= 0.5f;
   }
 }
 
